@@ -1,0 +1,163 @@
+{
+  "nav": {
+    "inventories": "Инвентари",
+    "users": "Пользователи",
+    "myInventories": "Мои инвентари",
+    "login": "Войти",
+    "logout": "Выйти",
+    "register": "Зарегестрироваться",
+    "lang": {
+      "en": "EN",
+      "ru": "РУС"
+    },
+    "areYouNew": "Впервые здесь?",
+    "haveAccount": "Уже зарегестрированы?"
+  },
+  "auth": {
+    "emailOrUserName": "Эл. почта\\имя пользователя ",
+    "password": "Пароль",
+    "login": "Войти",
+    "firstName": "Имя",
+    "lastName": "Фамилия",
+    "userName": "Имя пользователя",
+    "email": "Электронная почта",
+    "register": "Регистрация"
+  },
+  "inventory": {
+    "buttons": {
+      "create": "Создать",
+      "deleteSelected": "Удалить выбранные инвентаризации"
+    },
+    "search": {
+      "placeholder": "Поиск"
+    },
+    "table": {
+      "name": "Название",
+      "items": "Предметы",
+      "creator": "Создатель"
+    }
+  },
+  "inventoryCreate": {
+    "title": "Создать инвентарь",
+    "fields": {
+      "inventoryType": "Тип инвентаря",
+      "description": "Описание",
+      "isPublic": "Публичный",
+      "itemNames": "Типы предметов",
+      "tags": "Теги"
+    },
+    "buttons": {
+      "submit": "Создать"
+    },
+    "validation": {
+      "typeRequired": "Тип инвентаря обязателен"
+    },
+    "error": {
+      "creationFailed": "Не удалось создать"
+    }
+  },
+  "users": {
+    "buttons": {
+      "unblock": "Разблокировать пользователей",
+      "block": "Заблокировать пользователей",
+      "addAdmin": "Назначить администратором",
+      "removeAdmin": "Снять администратором",
+      "deleteUsers": "Удалить выбранных пользователей",
+      "addToInventory": "Дать доступ",
+      "removeFromInventory": "Отменить доступ"
+    },
+    "search": {
+      "placeholder": "Поиск"
+    },
+    "table": {
+      "name": "Имя",
+      "username": "Логин",
+      "email": "Электронная почта",
+      "blocked": "Заблокирован",
+      "admin": "Администратор"
+    }
+  },
+  "user": {
+    "tabs": {
+      "info": "Инфо",
+      "inventories": "Инвентари"
+    },
+    "fields": {
+      "username": "Имя пользователя",
+      "email": "Электронная почта",
+      "status": "Статус",
+      "role": "Роль"
+    },
+    "status": {
+      "active": "Активен",
+      "blocked": "Заблокирован"
+    },
+    "roles": {
+      "admin": "Администратор",
+      "user": "Пользователь"
+    },
+    "tables": {
+      "created": "Мои инвентари",
+      "viewed": "Доступ редактора"
+    }
+  },
+  "inventoryInfo": {
+    "tabs": {
+      "details": "Подробнее",
+      "chat": "Чат",
+      "types": "Типы предметов",
+      "items": "Предметы",
+      "editors": "Редакторы"
+    },
+    "detailsTab": {
+      "titleView": "Подробнее",
+      "titleEdit": "Редактировать",
+      "editMode": "Режим редактирования",
+      "viewMode": "Режим просмотра",
+      "inventoryType": "Название",
+      "visibility": {
+        "label": "Видимость",
+        "public": "Публичный",
+        "private": "Приватный",
+        "suffix": "инвентарь"
+      },
+      "description": "Описание",
+      "tags": {
+        "label": "Теги",
+        "add": "Добавить тег"
+      },
+      "creator": "Создатель"
+    },
+    "chatTab": {
+      "title": "Чат",
+      "noMessages": "Сообщений нет"
+    },
+    "storedItemsTab": {
+      "searchPlaceholder": "Поиск",
+      "deleteSelectedTitle": "Удалить выбранные",
+      "table": {
+        "header": {
+          "select": "Выбрать",
+          "item": "Предметы"
+        },
+        "noItems": "Нет предметов"
+      },
+      "addItemTitle": "Добавить предмет в группу",
+      "addItemButton": "Добавить"
+    },
+    "itemTypesTab": {
+      "title": "Типы предметов",
+      "searchPlaceholder": "Поиск типов предметов...",
+      "noItems": "Типы предметов не выбраны.",
+      "buttons": {
+        "revert": "Отменить",
+        "save": "Сохранить"
+      }
+    },
+    "editorsTab": {
+      "writeAccess": "Пользователи с правом записи",
+      "allUsers": "Все пользователи"
+    }
+  }
+}
+

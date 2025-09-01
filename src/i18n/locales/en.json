@@ -1,0 +1,162 @@
+{
+  "nav": {
+    "inventories": "Inventories",
+    "users": "Users",
+    "myInventories": "My Inventories",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "lang": {
+      "en": "EN",
+      "ru": "РУС"
+    },
+    "areYouNew": "Are you new here?",
+    "haveAccount": "Already have an account?"
+  },
+  "auth": {
+    "emailOrUserName": "Email\\Username",
+    "password": "Password",
+    "login": "Login",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "userName": "Username",
+    "email": "Email",
+    "register": "Register"
+  },
+  "inventory": {
+    "buttons": {
+      "create": "Create",
+      "deleteSelected": "Delete selected inventories"
+    },
+    "search": {
+      "placeholder": "Search"
+    },
+    "table": {
+      "name": "Name",
+      "items": "Items",
+      "creator": "Creator"
+    }
+  },
+  "inventoryCreate": {
+    "title": "Create Inventory",
+    "fields": {
+      "inventoryType": "Inventory Type",
+      "description": "Description",
+      "isPublic": "Public",
+      "itemNames": "Items",
+      "tags": "Tags"
+    },
+    "buttons": {
+      "submit": "Create"
+    },
+    "validation": {
+      "typeRequired": "Inventory type is required"
+    },
+    "error": {
+      "creationFailed": "Creation failed"
+    }
+  },
+  "users": {
+    "buttons": {
+      "unblock": "Unblock selected users",
+      "block": "Block selected users",
+      "addAdmin": "Grant admin role",
+      "removeAdmin": "Revoke admin role",
+      "deleteUsers": "Delete selected users",
+      "addToInventory": "Allow write",
+      "removeFromInventory": "Revoke write access"
+    },
+    "search": {
+      "placeholder": "Search"
+    },
+    "table": {
+      "name": "Name",
+      "username": "Username",
+      "email": "Email",
+      "blocked": "Blocked",
+      "admin": "Admin"
+    }
+  },
+  "user": {
+    "tabs": {
+      "info": "Info",
+      "inventories": "Inventories"
+    },
+    "fields": {
+      "username": "Username",
+      "email": "Email",
+      "status": "Status",
+      "role": "Role"
+    },
+    "status": {
+      "active": "Active",
+      "blocked": "Blocked"
+    },
+    "roles": {
+      "admin": "Administrator",
+      "user": "User"
+    },
+    "tables": {
+      "created": "Created inventories",
+      "viewed": "Editor permission"
+    }
+  },
+  "inventoryInfo": {
+    "tabs": {
+      "details": "Details",
+      "chat": "Chat",
+      "types": "Item Types",
+      "items": "Stored Items",
+      "editors": "Write access"
+    },
+    "detailsTab": {
+      "titleView": "Inventory Details",
+      "titleEdit": "Edit Inventory",
+      "editMode": "Edit Mode",
+      "viewMode": "View Mode",
+      "inventoryType": "Inventory Type",
+      "visibility": {
+        "label": "Visibility",
+        "public": "Public",
+        "private": "Private",
+        "suffix": "Inventory"
+      },
+      "description": "Description",
+      "tags": {
+        "label": "Tags",
+        "add": "Add tag"
+      },
+      "creator": "Creator"
+    },
+    "chatTab": {
+      "title": "Chat",
+      "noMessages": "No messages yet"
+    },
+    "storedItemsTab": {
+      "searchPlaceholder": "Search items...",
+      "deleteSelectedTitle": "Delete selected",
+      "table": {
+        "header": {
+          "select": "Select",
+          "item": "Items"
+        },
+        "noItems": "No items"
+      },
+      "addItemTitle": "Add item to group",
+      "addItemButton": "Add"
+    },
+    "itemTypesTab": {
+      "title": "Item Types",
+      "searchPlaceholder": "Search item types...",
+      "noItems": "No item types selected.",
+      "buttons": {
+        "revert": "Revert",
+        "save": "Save"
+      }
+    },
+    "editorsTab": {
+      "writeAccess": "Users with Write Access",
+      "allUsers": "All Users"
+    }
+  }
+}
