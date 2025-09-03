@@ -16,6 +16,7 @@ export const useUserStore = defineStore('userStore', {
         clearUser() {
             this.user = null;
         },
-    }
+    },
+    persist: true
 });
 

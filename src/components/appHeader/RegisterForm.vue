@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref} from 'vue';
-import {apiClient} from "@/services/apiClient.ts";
+import {apiClient} from "@/apiClient/apiClient.ts";
 import type {AppUserGetDto} from "@/dto/user/AppUserGetDto.ts";
 import type {RegistrationDto} from "@/dto/user/RegistrationDto.ts";
 import type {ResultDtoGeneric} from "@/dto/general/ResultDto.ts";
@@ -8,10 +8,9 @@ import {useJwtStore} from "@/stores/JwtStore.ts";
 import {useUserStore} from "@/stores/UserStore.ts";
 import {useI18n} from "vue-i18n";
 
-const { t } = useI18n();
+const {t} = useI18n();
 const jwtStore = useJwtStore();
 const userStore = useUserStore();
-const errorMessage = ref('');
 const dto = ref<RegistrationDto>({
   firstName: '',
   lastName: '',
@@ -21,8 +20,6 @@ const dto = ref<RegistrationDto>({
 });
 
 async function register() {
-  errorMessage.value = '';
-
   try {
     const response = await apiClient.post<ResultDtoGeneric<string>>(
         '/api/Authentication/sign-up',
@@ -38,11 +35,11 @@ async function register() {
       dto.value.userName = '';
       dto.value.email = '';
       dto.value.password = '';
-    } else {
-      errorMessage.value = 'Registration failed';
+    } else if (!response.data.isSucceeded) {
+      alert(response.data.error)
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || 'Registration failed. Please try again');
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -54,11 +51,9 @@ async function setCurrentUser() {
       userStore.setUser(response.data);
     } else {
       jwtStore.clearToken();
-      errorMessage.value = 'Failed to load user info';
     }
-  } catch (err: any) {
-    errorMessage.value =
-        err.response?.data?.message || 'Error fetching user info';
+  } catch (err) {
+    console.error(err);
   }
 }
 </script>
@@ -105,6 +100,10 @@ async function setCurrentUser() {
           :placeholder="t('auth.password')"
           required/>
     </div>
+    <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
+      <i class="bi bi-person-plus-fill"></i>
+      {{ t('auth.register') }}
+    </button>
   </form>
 </template>
 

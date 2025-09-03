@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref, onMounted, watch, reactive} from 'vue';
-import {apiClient} from '@/services/apiClient.ts';
+import {apiClient} from '@/apiClient/apiClient.ts';
 import type {AppUserGetDto} from '@/dto/user/AppUserGetDto.ts';
 import type {UserRequestDto} from '@/dto/user/UserRequestDto.ts';
 import type {ResultDto} from '@/dto/general/ResultDto.ts';
@@ -85,7 +85,7 @@ function toggleSelection(id: string) {
 
 async function onScroll(e: Event) {
   const el = e.target as HTMLElement;
-  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight) {
     await loadUsers(false);
   }
 }
@@ -104,34 +104,34 @@ async function changeUserStatus(requestedStatus: boolean, roleName: string | nul
   try {
     const response = await apiClient.post<ResultDto | null>(endpoint, dto);
 
-    if (response.data === null) {
+    if (!response.data) {
       selectedIds.value.clear();
       allSelected.value = false;
       await loadUsers(true);
       await setCurrentUser();
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || 'Error changing user status.');
+  } catch (err) {
+    console.error(err);
   }
 }
 
 async function deleteSelectedUsers() {
-  if (selectedIds.value.size === 0 || !userStore.hasAdminRights) return;
+  if (selectedIds.value.size === 0) return;
 
   try {
-    const response = await apiClient.delete<ResultDto>('/api/UserOperations/delete', null, {userIds: Array.from(selectedIds.value)});
+    const response = await apiClient.delete<ResultDto | null>('/api/UserOperations/delete-selected', null, {userIds: Array.from(selectedIds.value)});
 
-    if (response.data?.isSucceeded) {
+    if (response.data) {
+      alert(response.data.error);
+    } else {
       users.value = users.value.filter(user => !selectedIds.value.has(user.id));
       selectedIds.value.clear();
       allSelected.value = false;
       await loadUsers(true);
       await setCurrentUser();
-    } else {
-      alert(response.data.error);
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || 'Error deleting users.');
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -149,18 +149,17 @@ async function changeUserInventoryStatus(isAllowed: boolean) {
   try {
     const response = isAllowed ? await apiClient.post<ResultDto | null>(endpoint, dto) : await apiClient.delete<ResultDto | null>(endpoint, null, dto);
 
-    if (response.data?.isSucceeded) {
+    if (!response.data) {
       selectedIds.value.clear();
       allSelected.value = false;
       await loadUsers(true);
     } else {
       alert(response.data?.error);
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || 'Error updating inventory status.');
+  } catch (err) {
+    console.error(err);
   }
 }
-
 
 async function setCurrentUser() {
   try {
@@ -172,8 +171,8 @@ async function setCurrentUser() {
       jwtStore.clearToken();
       userStore.clearUser();
     }
-  } catch (error) {
-    alert(error);
+  } catch (err) {
+    console.error(err);
   }
 }
 </script>

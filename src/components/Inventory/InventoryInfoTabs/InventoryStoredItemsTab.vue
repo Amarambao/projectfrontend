@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import {ref, watch, onMounted, reactive, computed} from 'vue';
 import {useI18n} from 'vue-i18n';
-import {apiClient} from '@/services/apiClient';
+import {apiClient} from '@/apiClient/apiClient';
 import type {PaginationRequest} from '@/dto/general/PaginationRequest';
 import type {StoredItemGetAllDto} from '@/dto/item/StoredItemGetAllDto.ts';
 import AddItemModal from "@/components/item/AddItemModal.vue";
 import type {AddItemDto} from "@/dto/item/AddItemDto.ts";
+import {useUserStore} from "@/stores/UserStore.ts";
+import type {ResultDto} from "@/dto/general/ResultDto.ts";
+import type {IdAndListDto} from "@/dto/general/IdAndListDto.ts";
 
-const props = defineProps<{ inventoryId: string; }>();
+const props = defineProps<{ inventoryId: string; isCreator: boolean }>();
 
+const userStore = useUserStore();
 const {t} = useI18n();
 const items = ref<StoredItemGetAllDto[]>([]);
 const selectedIds = ref<Set<string>>(new Set());
@@ -20,19 +24,24 @@ const allItemIds = computed(() => items.value.flatMap(group => group.itemIds?.ma
 
 const isAllSelected = computed(() => allItemIds.value.length > 0 && allItemIds.value.every(id => selectedIds.value.has(id)));
 
-const dto = reactive<PaginationRequest>({
+const requestDto = reactive<PaginationRequest>({
   page: 0,
   returnCount: 25,
   inventoryId: props.inventoryId,
   searchValue: null,
 });
 
+const deleteDto = reactive<IdAndListDto>({
+  id: props.inventoryId,
+  values: Array.from(selectedIds.value),
+});
+
 const addedItemDto = ref<AddItemDto | null>(null);
 
-watch(() => dto.searchValue, () => {
+watch(() => requestDto.searchValue, () => {
   if (timer.value) clearTimeout(timer.value);
   timer.value = setTimeout(() => {
-    dto.page = 0;
+    requestDto.page = 0;
     hasMore.value = true;
     loadItems(true);
   }, 500);
@@ -79,22 +88,22 @@ async function loadItems(reset = false) {
   if (!hasMore.value) return;
 
   if (reset) {
-    dto.page = 0;
+    requestDto.page = 0;
     items.value = [];
     hasMore.value = true;
   }
 
   try {
-    const response = await apiClient.get<StoredItemGetAllDto[]>('/api/StoredItems/get', dto);
+    const response = await apiClient.get<StoredItemGetAllDto[]>('/api/StoredItems/get', requestDto);
     const data = response.data ?? [];
 
     const totalItemCount = data.reduce((sum, group) => sum + (group.itemIds?.length || 0), 0);
-    if (totalItemCount < dto.returnCount) hasMore.value = false;
+    if (totalItemCount < requestDto.returnCount) hasMore.value = false;
 
     items.value.push(...data);
-    dto.page++;
+    requestDto.page++;
   } catch (err) {
-    console.error('Failed to load stored items:', err);
+    console.error(err);
   }
 }
 
@@ -102,66 +111,66 @@ async function deleteSelectedItems() {
   if (selectedIds.value.size === 0) return;
 
   try {
-    await apiClient.delete('/api/StoredItems/delete', {
-      params: {
-        id: props.inventoryId,
-        values: Array.from(selectedIds.value),
-      },
+    const response = await apiClient.delete<ResultDto | null>('/api/StoredItems/delete', null,  {
+      id: props.inventoryId,
+      values: Array.from(selectedIds.value)
     });
 
-    items.value = items.value.map(group => ({
-      ...group,
-      itemIds: group.itemIds?.filter(item => !selectedIds.value.has(item.id)) ?? [],
-    })).filter(group => group.itemIds?.length);
-
-    selectedIds.value.clear();
+    if (response.data) {
+      alert(response.data.error)
+    } else {
+      await loadItems(true)
+      selectedIds.value.clear();
+    }
   } catch (err) {
-    console.error('Failed to delete selected items:', err);
+    console.error(err);
   }
 }
 
 async function addItemToGroup(group: StoredItemGetAllDto) {
   try {
-    const addItemDto = reactive<AddItemDto>({
+    const addItemDto: AddItemDto = {
       inventoryId: props.inventoryId,
       itemType: group.itemName,
-    });
+      customId: null
+    };
 
-    const response = await apiClient.post<AddItemDto | null>('/api/StoredItems/add', {
-      dto: addItemDto
-    });
+    const response = await apiClient.post<AddItemDto | null>('/api/StoredItems/add', addItemDto);
 
     if (response.data) {
       addedItemDto.value = response.data;
       showModal.value = true;
+    } else {
+      await loadItems(true)
     }
   } catch (err) {
-    console.error('Failed to add item:', err);
+    console.error(err);
   }
 }
 </script>
 
 <template>
   <div class="d-flex btn-group align-items-center mb-2">
-    <button class="btn btn-outline-danger btn-md"
+    <button v-if="isCreator || userStore.hasAdminRights"
+            class="btn btn-outline-danger btn-md"
             :disabled="selectedIds.size === 0"
             @click="deleteSelectedItems"
             :title="t('inventoryInfo.storedItemsTab.deleteSelectedTitle')">
       <i class="bi bi-trash"></i>
     </button>
     <input type="text"
-           v-model="dto.searchValue"
+           v-model="requestDto.searchValue"
            class="form-control form-control-md"
            :placeholder="t('inventoryInfo.storedItemsTab.searchPlaceholder')"/>
   </div>
-
   <div style="max-height: 70vh; overflow-y: auto;" @scroll="handleScroll">
     <div class="table-responsive">
       <table class="table table-bordered table-hover">
         <thead class="sticky-top table-light">
         <tr>
           <th style="width: 2rem">
-            <input type="checkbox"
+            <input v-if="isCreator || userStore.hasAdminRights"
+                   type="checkbox"
                    :checked="isAllSelected"
                    @change="toggleSelectAll"/>
           </th>
@@ -172,7 +181,8 @@ async function addItemToGroup(group: StoredItemGetAllDto) {
         <template v-for="group in items" :key="group.itemName">
           <tr class="table-light">
             <td>
-              <input type="checkbox"
+              <input v-if="isCreator || userStore.hasAdminRights"
+                     type="checkbox"
                      :checked="isGroupSelected(group)"
                      @change="toggleGroupSelection(group)"/>
             </td>
@@ -187,7 +197,8 @@ async function addItemToGroup(group: StoredItemGetAllDto) {
           </tr>
           <tr v-for="item in group.itemIds" :key="item.id" class="table-secondary">
             <td>
-              <input type="checkbox"
+              <input v-if="isCreator || userStore.hasAdminRights"
+                     type="checkbox"
                      :checked="selectedIds.has(item.id)"
                      @change="toggleSelection(item.id)"/>
             </td>

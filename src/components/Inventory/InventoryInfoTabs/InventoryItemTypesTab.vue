@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {ref, computed, onMounted, defineProps, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
-import {apiClient} from '@/services/apiClient.ts';
+import {apiClient} from '@/apiClient/apiClient.ts';
 import type {ResultDto} from '@/dto/general/ResultDto.ts';
 import type {IdAndNameDto} from '@/dto/general/IdAndNameDto.ts';
 import CustomIdEditor from '@/components/customId/CustomIdEditor.vue';
@@ -37,7 +37,7 @@ async function loadInventoryItems() {
     originalData.value = response.data || [];
     itemList.value = [...originalData.value];
   } catch (err) {
-    console.error('Failed to load inventory items:', err);
+    console.error(err);
   }
 }
 
@@ -59,8 +59,8 @@ async function fetchItemSuggestions() {
       searchValue: query,
     });
     itemSuggestions.value = response.data || [];
-  } catch {
-    itemSuggestions.value = [];
+  } catch(err) {
+    console.error(err)
   }
 }
 
@@ -92,14 +92,15 @@ async function saveChanges() {
       id: props.inventoryId,
       values: itemList.value.map(i => i.name),
     };
-    const response = await apiClient.post<ResultDto>('/api/InventoryItemType/modify', dto);
-    if (!response.data?.isSucceeded) {
+    const response = await apiClient.post<ResultDto | null>('/api/InventoryItemType/modify', dto);
+
+    if (response.data) {
       alert(response.data.error);
     } else {
       originalData.value = [...itemList.value];
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || 'Error saving item types');
+  } catch (err) {
+    console.error(err);
   }
 }
 

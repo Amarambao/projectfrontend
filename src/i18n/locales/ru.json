@@ -10,6 +10,7 @@
       "en": "EN",
       "ru": "РУС"
     },
+    "profile": "Мой профиль",
     "areYouNew": "Впервые здесь?",
     "haveAccount": "Уже зарегестрированы?"
   },
@@ -43,6 +44,7 @@
       "inventoryType": "Тип инвентаря",
       "description": "Описание",
       "isPublic": "Публичный",
+      "isPrivate": "Приватный",
       "itemNames": "Типы предметов",
       "tags": "Теги"
     },
@@ -54,6 +56,10 @@
     },
     "error": {
       "creationFailed": "Не удалось создать"
+    },
+    "actions": {
+      "submit": "Создать",
+      "cancel": "Отмена"
     }
   },
   "users": {
@@ -115,6 +121,7 @@
       "editMode": "Режим редактирования",
       "viewMode": "Режим просмотра",
       "inventoryType": "Название",
+      "delete": "Удалить",
       "visibility": {
         "label": "Видимость",
         "public": "Публичный",
@@ -130,7 +137,10 @@
     },
     "chatTab": {
       "title": "Чат",
-      "noMessages": "Сообщений нет"
+      "noMessages": "Сообщений нет",
+      "inputPlaceholder": "Сообщение",
+      "send": "Отправить",
+      "delete": "Удалить выбранные сообщения"
     },
     "storedItemsTab": {
       "searchPlaceholder": "Поиск",

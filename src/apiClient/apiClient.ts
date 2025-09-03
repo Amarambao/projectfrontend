@@ -18,6 +18,11 @@ export class ApiClient {
 
     private setupInterceptors() {
         this.axiosInstance.interceptors.request.use((config) => {
+            const jwtStore = useJwtStore();
+            if (jwtStore.token) {
+                config.headers = config.headers || {};
+                config.headers.Authorization = `Bearer ${jwtStore.token}`;
+            }
             return config;
         });
 
@@ -28,10 +33,8 @@ export class ApiClient {
                     const { status, data } = error.response;
 
                     if (status === 400) {
-                        // Show backend message
                         alert(data?.message || "Bad request");
 
-                        // Clear token & user from Pinia stores
                         const authStore = useJwtStore();
                         const userStore = useUserStore();
                         authStore.clearToken();
@@ -56,9 +59,9 @@ export class ApiClient {
             } else {
                 return await this.axiosInstance[method]<T>(url, {...options, params: dataOrParams});
             }
-        } catch (error) {
-            console.error(error);
-            throw error;
+        } catch (err) {
+            console.error(err);
+            throw err;
         }
     }
 
@@ -69,10 +72,6 @@ export class ApiClient {
     public post<T = any>(url: string, data?: any, queryParams?: Record<string, any>, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
         const fullUrl = this.buildUrlWithQueryParams(url, queryParams);
         return this.handleRequest<T>('post', fullUrl, data, config, true);
-    }
-
-    public put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-        return this.handleRequest<T>('put', url, data, config, true);
     }
 
     public delete<T = any>(url: string, data?: any, queryParams?: Record<string, any>, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {

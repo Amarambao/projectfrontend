@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {ref, onMounted, watch, reactive} from 'vue';
 import {useI18n} from 'vue-i18n';
-import {apiClient} from '@/services/apiClient.ts';
+import {apiClient} from '@/apiClient/apiClient.ts';
 import type {InventoryGetLiteDto} from '@/dto/inventory/InventoryGetLiteDto.ts';
 import type {InventoryRequestDto} from '@/dto/inventory/InventoryRequestDto.ts';
 import type {ResultDto} from '@/dto/general/ResultDto.ts';
@@ -51,11 +51,10 @@ async function loadInventories(reset = false) {
 
   try {
     const response = await apiClient.get<InventoryGetLiteDto[]>('/api/Inventory/get', dto);
-    const newItems = response.data || [];
 
-    if (newItems.length < dto.returnCount) hasMore.value = false;
+    if (response.data.length < dto.returnCount) hasMore.value = false;
 
-    inventories.value.push(...newItems);
+    inventories.value.push(...response.data);
     dto.page++;
   } catch (err) {
     console.log(err);
@@ -78,7 +77,7 @@ function toggleSelection(id: string) {
 
 async function onScroll(e: Event) {
   const el = e.target as HTMLElement;
-  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight) {
     await loadInventories(false);
   }
 }
@@ -88,7 +87,7 @@ async function deleteSelectedInventories() {
 
   try {
     const response = await apiClient.delete<ResultDto>('/api/Inventory/delete', null, {
-      inventoryIds: selectedIds.value
+      inventoryIds: Array.from(selectedIds.value)
     });
 
     if (response.data?.isSucceeded) {
@@ -98,8 +97,8 @@ async function deleteSelectedInventories() {
     } else {
       alert(t('inventory.alerts.deleteFailed'));
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || t('inventory.alerts.deleteError'));
+  } catch (err) {
+    console.error(err);
   }
 }
 </script>

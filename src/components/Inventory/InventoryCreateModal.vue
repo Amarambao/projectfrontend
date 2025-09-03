@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import {ref, reactive, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
-import {apiClient} from '@/services/apiClient.ts';
+import {apiClient} from '@/apiClient/apiClient.ts';
 import type {InventoryCreateDto} from '@/dto/inventory/InventoryCreateDto.ts';
 import type {ResultDtoGeneric} from '@/dto/general/ResultDto.ts';
 
-const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'created'): void;
-}>();
+const emit = defineEmits(['close', 'created']);
 
 const {t} = useI18n();
 const win = window;
@@ -65,8 +62,8 @@ async function fetchInventoryTypeSuggestions() {
     });
 
     inventoryTypeSuggestions.value = response.data || [];
-  } catch {
-    inventoryTypeSuggestions.value = [];
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -90,8 +87,8 @@ async function fetchItemSuggestions() {
       searchValue: itemInput.value.trim()
     });
     itemSuggestions.value = response.data || [];
-  } catch {
-    itemSuggestions.value = [];
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -123,14 +120,14 @@ async function fetchTagSuggestions() {
   }
 
   try {
-    const response = await apiClient.get<string[]>('/api/ItemType/get', {
+    const response = await apiClient.get<string[]>('/api/Tag/get', {
       page: 0,
       returnCount: 5,
       searchValue: tagInput.value.trim()
     });
     tagSuggestions.value = response.data || [];
-  } catch {
-    tagSuggestions.value = [];
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -165,15 +162,15 @@ async function submit() {
   try {
     const response = await apiClient.post<ResultDtoGeneric<string>>('/api/Inventory/create', dto);
 
-    if (response.data?.isSucceeded && response.data.data) {
+    if (response.data?.isSucceeded) {
       emit('created');
       emit('close');
       win.open(`/inventory/${response.data.data}`, '_blank');
     } else {
       error.value = response.data?.error || t('inventoryCreate.error.creationFailed');
     }
-  } catch (err: any) {
-    error.value = err.response?.data?.message || t('inventoryCreate.error.creationError');
+  } catch (err) {
+    console.error(err);
   }
 }
 </script>
@@ -215,7 +212,7 @@ async function submit() {
           <div class="form-check mb-3">
             <input class="form-check-input" type="checkbox" v-model="dto.isPublic" id="isPublic"/>
             <label class="form-check-label" for="isPublic">
-              {{ t('inventoryCreate.fields.isPublic') }}
+              {{ dto.isPublic ? t('inventoryCreate.fields.isPublic') : t('inventoryCreate.fields.isPrivate') }}
             </label>
           </div>
           <div class="mb-3">
@@ -275,6 +272,18 @@ async function submit() {
             </ul>
           </div>
           <div v-if="error" class="alert alert-danger">{{ error }}</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button"
+                  class="btn btn-primary"
+                  @click="submit">
+            {{ t('inventoryCreate.actions.submit') }}
+          </button>
+          <button type="button"
+                  class="btn btn-secondary"
+                  @click="emit('close')">
+            {{ t('inventoryCreate.actions.cancel') }}
+          </button>
         </div>
       </div>
     </div>

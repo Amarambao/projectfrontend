@@ -2,7 +2,7 @@
 import {ref, onMounted} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {useRoute} from 'vue-router';
-import {apiClient} from '@/services/apiClient';
+import {apiClient} from '@/apiClient/apiClient';
 import type {InventoryGetFullDto} from '@/dto/inventory/InventoryGetFullDto';
 import InventoryDetailsTab from "@/components/Inventory/InventoryInfoTabs/InventoryDetailsTab.vue";
 import InventoryItemTypesTab from "@/components/Inventory/InventoryInfoTabs/InventoryItemTypesTab.vue";
@@ -38,8 +38,8 @@ async function loadInventory() {
     } else {
       inventory.value = response.data.data!;
     }
-  } catch (err: any) {
-    console.error('Failed to load inventory:', err);
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -52,8 +52,8 @@ async function checkPermissions() {
 
     isCreator.value = creatorRes.data;
     isEditor.value = editorRes.data;
-  } catch (err: any) {
-    console.warn('Permission check failed:', err);
+  } catch (err) {
+    console.error(err);
   }
 }
 </script>
@@ -90,18 +90,20 @@ async function checkPermissions() {
       </li>
     </ul>
 
-    <div v-if="inventory">
+    <div v-if="inventory && (inventory.isPublic || isCreator || isEditor || userStore.hasAdminRights) ">
       <InventoryDetailsTab v-if="activeTab === 'details'"
                            :inventory="inventory"
-                           :isCreator="isCreator"/>
+                           :isCreator="isCreator"
+                           @reloadInventory="loadInventory"/>
       <InventoryChatTab v-if="activeTab === 'chat'"
                         :inventoryId="inventory.id"
                         :isCreator="isCreator"/>
       <InventoryStoredItemsTab v-if="activeTab === 'items'"
-                               :inventoryId="inventory.id"/>
-      <InventoryItemTypesTab v-if="activeTab === 'types'"
+                               :inventoryId="inventory.id"
+                               :isCreator="isCreator"/>
+      <InventoryItemTypesTab v-if="activeTab === 'types' && (isCreator || userStore.hasAdminRights)"
                              :inventoryId="inventory.id"/>
-      <InventoryEditorsTab v-if="activeTab === 'editors'"
+      <InventoryEditorsTab v-if="activeTab === 'editors' && (isCreator || userStore.hasAdminRights)"
                            :inventoryId="inventory.id"/>
     </div>
   </div>

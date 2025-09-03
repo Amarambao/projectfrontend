@@ -6,15 +6,15 @@ import {useJwtStore} from '@/stores/JwtStore';
 import {useUserStore} from '@/stores/UserStore';
 import LoginForm from "@/components/appHeader/LoginForm.vue";
 import RegisterForm from "@/components/appHeader/RegisterForm.vue";
-import type {AppUserGetDto} from "@/dto/user/AppUserGetDto.ts";
 
 const {t, locale} = useI18n();
 const route = useRoute();
 const jwtStore = useJwtStore();
 const userStore = useUserStore();
 const activeForm = ref<'login' | 'register'>('login');
-const user = ref<AppUserGetDto | null>(userStore.getUser);
-const isAuthenticated = ref<boolean>(jwtStore.isAnyToken() && jwtStore.isTokenValid());
+
+const user = computed(() => userStore.getUser);
+const isAuthenticated = computed(() => jwtStore.isAnyToken() && jwtStore.isTokenValid());
 const currentLang = computed(() => locale.value);
 
 function setLang(lang: 'en' | 'ru') {
@@ -54,20 +54,19 @@ function logout() {
         <div class="btn-group me-3">
           <button
               type="button"
-              class="btn btn-outline-secondary btn-sm"
+              class="btn btn-outline-secondary btn-md"
               :class="{ active: currentLang === 'en' }"
               @click="setLang('en')">
             {{ t('nav.lang.en') }}
           </button>
           <button
               type="button"
-              class="btn btn-outline-secondary btn-sm"
+              class="btn btn-outline-secondary btn-md"
               :class="{ active: currentLang === 'ru' }"
               @click="setLang('ru')">
             {{ t('nav.lang.ru') }}
           </button>
         </div>
-
         <div class="dropdown">
           <button
               class="btn btn-outline-secondary dropdown-toggle"
@@ -77,8 +76,7 @@ function logout() {
               aria-expanded="false">
             <i class="bi bi-person-circle"></i>
           </button>
-          <ul
-              class="dropdown-menu dropdown-menu-end p-2 position-absolute"
+          <ul class="dropdown-menu dropdown-menu-end p-2 position-absolute"
               style="z-index: 1080;"
               aria-labelledby="userMenuButton">
             <template v-if="isAuthenticated && user">

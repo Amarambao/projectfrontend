@@ -3,5 +3,4 @@ export interface InventoryUpdateDto {
     isPublic: boolean;
     name?: string | null;
     description?: string | null;
-    tags?: string[];
 }

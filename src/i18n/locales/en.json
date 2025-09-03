@@ -10,6 +10,7 @@
       "en": "EN",
       "ru": "РУС"
     },
+    "profile": "My profile",
     "areYouNew": "Are you new here?",
     "haveAccount": "Already have an account?"
   },
@@ -43,6 +44,7 @@
       "inventoryType": "Inventory Type",
       "description": "Description",
       "isPublic": "Public",
+      "isPrivate": "Private",
       "itemNames": "Items",
       "tags": "Tags"
     },
@@ -54,6 +56,10 @@
     },
     "error": {
       "creationFailed": "Creation failed"
+    },
+    "actions": {
+      "submit": "Create",
+      "cancel": "Cancel"
     }
   },
   "users": {
@@ -115,6 +121,7 @@
       "editMode": "Edit Mode",
       "viewMode": "View Mode",
       "inventoryType": "Inventory Type",
+      "delete": "Delete inventory",
       "visibility": {
         "label": "Visibility",
         "public": "Public",
@@ -130,7 +137,10 @@
     },
     "chatTab": {
       "title": "Chat",
-      "noMessages": "No messages yet"
+      "noMessages": "No messages yet",
+      "inputPlaceholder": "Message",
+      "send": "Send",
+      "delete": "Delete selected messages"
     },
     "storedItemsTab": {
       "searchPlaceholder": "Search items...",

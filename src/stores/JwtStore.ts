@@ -24,4 +24,5 @@ export const useJwtStore = defineStore("jwtStore", {
             return new Date() < tokenExpirationTime;
         },
     },
+    persist: true
 });

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {defineProps, ref, onMounted, watch, computed} from 'vue';
-import {apiClient} from '@/services/apiClient.ts';
+import {apiClient} from '@/apiClient/apiClient.ts';
 import type {CustomIdElementDto} from '@/dto/customId/CustomIdElementDto.ts';
 import type {ResultDto} from '@/dto/general/ResultDto.ts';
 import type {CustomIdModifyDto} from "@/dto/customId/CustomIdModifyDto.ts";
@@ -42,8 +42,9 @@ async function loadSequence() {
       itemId: props.itemId
     });
     originalSequence.value = response.data;
-    sequence.value = JSON.parse(JSON.stringify(response.data)); // deep copy
+    sequence.value = JSON.parse(JSON.stringify(response.data));
   } catch (err) {
+    console.error(err);
   }
 }
 
@@ -85,14 +86,13 @@ async function saveChanges() {
       sequence: sequence.value
     };
     const response = await apiClient.post<ResultDto>('/api/CustomIdElementSequence/modify', dto);
-    if (!response.data?.isSucceeded) {
-      alert(response.data.error || 'Failed to save sequence');
+    if (response.data) {
+      alert(response.data.error);
     } else {
       originalSequence.value = JSON.parse(JSON.stringify(sequence.value));
-      alert('Sequence saved');
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || 'Error saving sequence');
+  } catch (err) {
+    console.error(err);
   }
 }
 </script>

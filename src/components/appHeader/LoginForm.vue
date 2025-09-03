@@ -1,17 +1,16 @@
 <script setup lang="ts">
 import {ref} from 'vue';
 import {useJwtStore} from '@/stores/JwtStore';
-import {apiClient} from "@/services/apiClient.ts";
+import {apiClient} from "@/apiClient/apiClient.ts";
 import type {LoginDto} from "@/dto/user/LoginDto.ts";
 import type {ResultDtoGeneric} from "@/dto/general/ResultDto.ts";
 import {useUserStore} from "@/stores/UserStore.ts";
 import type {AppUserGetDto} from "@/dto/user/AppUserGetDto.ts";
 import {useI18n} from "vue-i18n";
 
-const { t } = useI18n();
+const {t} = useI18n();
 const jwtStore = useJwtStore();
 const userStore = useUserStore();
-const errorMessage = ref('');
 const dto = ref<LoginDto>({
   emailOrUserName: "",
   password: "",
@@ -29,8 +28,8 @@ async function login() {
       dto.value.emailOrUserName = "";
       dto.value.password = "";
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || 'Login failed. Please try again.');
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -42,11 +41,9 @@ async function setCurrentUser() {
       userStore.setUser(response.data);
     } else {
       jwtStore.clearToken();
-      errorMessage.value = 'Failed to load user info';
     }
-  } catch (err: any) {
-    errorMessage.value =
-        err.response?.data?.message || 'Error fetching user info';
+  } catch (err) {
+    console.error(err);
   }
 }
 </script>
@@ -56,7 +53,7 @@ async function setCurrentUser() {
     <div class="mb-2">
       <input
           v-model="dto.emailOrUserName"
-          type="email"
+          type="text"
           class="form-control"
           :placeholder="t('auth.emailOrUserName')"
           required/>
@@ -69,6 +66,10 @@ async function setCurrentUser() {
           :placeholder="t('auth.password')"
           required/>
     </div>
+    <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
+      <i class="bi bi-box-arrow-in-right"></i>
+      {{ t('auth.login') }}
+    </button>
   </form>
 </template>
 

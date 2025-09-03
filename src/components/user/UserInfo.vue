@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import {ref, onMounted} from 'vue';
 import {useI18n} from 'vue-i18n';
-import {apiClient} from '@/services/apiClient';
+import {apiClient} from '@/apiClient/apiClient';
 import type {AppUserGetDto} from '@/dto/user/AppUserGetDto';
 import type {ChangeUsersStatusDto} from '@/dto/user/ChangeUsersStatusDto';
 import type {ResultDto} from '@/dto/general/ResultDto';
 import InventoriesTable from '@/components/Inventory/InventoriesTable.vue';
 import {useUserStore} from '@/stores/UserStore';
 import {useJwtStore} from '@/stores/JwtStore';
+import router from "@/router";
 
 const props = defineProps<{ id: string }>();
 
@@ -17,19 +18,20 @@ const user = ref<AppUserGetDto | null>(null);
 const userStore = useUserStore();
 const jwtStore = useJwtStore();
 
-onMounted(() => {
-  loadUser();
+onMounted(async () => {
+  await loadUser();
 });
 
 async function loadUser() {
   try {
-    const response = await apiClient.get<AppUserGetDto | null>(
-        `/api/UserOperations/get-by-id/`,
-        {userId: props.id}
-    );
+    const response = await apiClient.get<AppUserGetDto | null>(`/api/UserOperations/get-by-id/`, {userId: props.id});
+
+    if (!response.data)
+      await router.push('/users');
+
     user.value = response.data;
-  } catch (err: any) {
-    console.error('Failed to load user:', err);
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -37,44 +39,41 @@ async function changeUserStatus(requestedStatus: boolean, roleName: string | nul
   if (!userStore.hasAdminRights) return;
 
   const dto: ChangeUsersStatusDto = {
-    requestedStatus,
+    requestedStatus: requestedStatus,
     userIds: [props.id],
-    roleName
+    roleName: roleName
   };
 
-  const endpoint =
-      roleName === null
-          ? '/api/UserOperations/change-users-blocking-status'
-          : '/api/UserOperations/change-users-role-status';
+  const endpoint = roleName === null
+      ? '/api/UserOperations/change-users-blocking-status'
+      : '/api/UserOperations/change-users-role-status';
 
   try {
     const response = await apiClient.post<ResultDto | null>(endpoint, dto);
-    if (response.data?.isSucceeded || response.data === null) {
+    if (response.data) {
+      alert(response.data.error);
+    } else {
       await loadUser();
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || t('users.alerts.changeStatusError'));
+  } catch (err) {
+    console.error(err);
   }
 }
 
 async function deleteUser() {
-  if (!userStore.hasAdminRights) return;
+  if (!userStore.hasAdminRights)
+    return;
 
   try {
-    const response = await apiClient.delete<ResultDto>(
-        '/api/UserOperations/delete',
-        null,
-        {userIds: [props.id]}
-    );
+    const response = await apiClient.delete<ResultDto>('/api/UserOperations/delete-selected', null, {userIds: [props.id]});
 
-    if (response.data?.isSucceeded) {
-      alert(t('users.alerts.deleted'));
-      // Optional: redirect or disable UI
+    if (response.data) {
+      alert(response.data.error);
     } else {
-      alert(response.data.error || t('users.alerts.deleteFailed'));
+      await loadUser();
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || t('users.alerts.deleteError'));
+  } catch (err) {
+    console.error(err);
   }
 }
 </script>
