@@ -54,7 +54,7 @@ async function loadInventories(reset = false) {
 
     if (response.data.length < dto.returnCount) hasMore.value = false;
 
-    inventories.value.push(...response.data);
+    inventories.value = [...response.data];
     dto.page++;
   } catch (err) {
     console.log(err);

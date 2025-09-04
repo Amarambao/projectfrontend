@@ -55,11 +55,10 @@ async function loadUsers(reset = false) {
 
   try {
     const response = await apiClient.get<AppUserGetDto[]>('/api/UserOperations/get-all', dto);
-    const newItems = response.data || [];
 
-    if (newItems.length < dto.returnCount) hasMore.value = false;
+    if (response.data.length < dto.returnCount) hasMore.value = false;
 
-    users.value.push(...newItems);
+    users.value = [...response.data];
     dto.page++;
   } catch (err) {
     console.error(err);
