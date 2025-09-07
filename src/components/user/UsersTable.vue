@@ -3,11 +3,12 @@ import {ref, onMounted, watch, reactive} from 'vue';
 import {apiClient} from '@/apiClient/apiClient.ts';
 import type {AppUserGetDto} from '@/dto/user/AppUserGetDto.ts';
 import type {UserRequestDto} from '@/dto/user/UserRequestDto.ts';
-import type {ResultDto} from '@/dto/general/ResultDto.ts';
+import type {ResultDto, ResultDtoGeneric} from '@/dto/general/ResultDto.ts';
 import {useUserStore} from '@/stores/UserStore.ts';
 import {useJwtStore} from '@/stores/JwtStore.ts';
 import type {ChangeUsersStatusDto} from "@/dto/user/ChangeUsersStatusDto.ts";
 import {useI18n} from "vue-i18n";
+import type {IdAndStringDto} from "@/dto/general/IdAndStringDto.ts";
 
 const props = defineProps<{ inventoryId: string | null; isIncluded: boolean; }>();
 
@@ -16,7 +17,7 @@ const win = window;
 const jwtStore = useJwtStore();
 const userStore = useUserStore();
 const users = ref<AppUserGetDto[]>([]);
-const selectedIds = ref(new Set<string>());
+const selectedUsers = ref(new Set<IdAndStringDto>());
 const allSelected = ref(false);
 const hasMore = ref(true);
 const timer = ref<ReturnType<typeof setTimeout> | null>(null);
@@ -67,20 +68,27 @@ async function loadUsers(reset = false) {
 
 function toggleSelectAll() {
   allSelected.value = !allSelected.value;
-  selectedIds.value.clear();
+  selectedUsers.value.clear();
+
   if (allSelected.value) {
-    users.value.forEach(user => selectedIds.value.add(user.id));
+    users.value.forEach(user => {
+      selectedUsers.value.add({id: user.id, value: user.concurrencyStamp});
+    });
   }
 }
 
-function toggleSelection(id: string) {
-  if (selectedIds.value.has(id)) {
-    selectedIds.value.delete(id);
+function toggleSelection(user: AppUserGetDto) {
+  const existing = Array.from(selectedUsers.value).find(u => u.id === user.id);
+
+  if (existing) {
+    selectedUsers.value.delete(existing);
   } else {
-    selectedIds.value.add(id);
+    selectedUsers.value.add({id: user.id, value: user.concurrencyStamp});
   }
-  allSelected.value = selectedIds.value.size === users.value.length;
+
+  allSelected.value = selectedUsers.value.size === users.value.length;
 }
+
 
 async function onScroll(e: Event) {
   const el = e.target as HTMLElement;
@@ -90,21 +98,21 @@ async function onScroll(e: Event) {
 }
 
 async function changeUserStatus(requestedStatus: boolean, roleName: string | null) {
-  if (selectedIds.value.size === 0 || !userStore.hasAdminRights) return;
+  if (selectedUsers.value.size === 0 || !userStore.hasAdminRights) return;
 
   const dto: ChangeUsersStatusDto = {
     requestedStatus: requestedStatus,
-    userIds: Array.from(selectedIds.value),
+    userIdAndStamp: Array.from(selectedUsers.value),
     roleName: roleName
   };
 
   const endpoint = roleName === null ? '/api/UserOperations/change-users-blocking-status' : '/api/UserOperations/change-users-role-status';
 
   try {
-    const response = await apiClient.post<ResultDto | null>(endpoint, dto);
+    const response = await apiClient.post<ResultDto>(endpoint, dto);
 
-    if (!response.data) {
-      selectedIds.value.clear();
+    if (!response.data.isSucceeded) {
+      selectedUsers.value.clear();
       allSelected.value = false;
       await loadUsers(true);
       await setCurrentUser();
@@ -115,16 +123,16 @@ async function changeUserStatus(requestedStatus: boolean, roleName: string | nul
 }
 
 async function deleteSelectedUsers() {
-  if (selectedIds.value.size === 0) return;
+  if (selectedUsers.value.size === 0) return;
 
   try {
-    const response = await apiClient.delete<ResultDto | null>('/api/UserOperations/delete-selected', null, {userIds: Array.from(selectedIds.value)});
+    const response = await apiClient.delete<ResultDto>('/api/UserOperations/delete-selected', null, {userIds: Array.from(selectedUsers.value)});
 
-    if (response.data) {
+    if (!response.data.isSucceeded) {
       alert(response.data.error);
     } else {
-      users.value = users.value.filter(user => !selectedIds.value.has(user.id));
-      selectedIds.value.clear();
+      users.value = users.value.filter(user => !Array.from(selectedUsers.value).some(selected => selected.id === user.id));
+      selectedUsers.value.clear();
       allSelected.value = false;
       await loadUsers(true);
       await setCurrentUser();
@@ -135,12 +143,12 @@ async function deleteSelectedUsers() {
 }
 
 async function changeUserInventoryStatus(isAllowed: boolean) {
-  if (!props.inventoryId || selectedIds.value.size === 0)
+  if (!props.inventoryId || selectedUsers.value.size === 0)
     return;
 
   const dto = {
     id: props.inventoryId,
-    values: Array.from(selectedIds.value),
+    values: Array.from(selectedUsers.value),
   };
 
   const endpoint = isAllowed ? '/api/InventoryEditors/add' : '/api/InventoryEditors/delete';
@@ -149,7 +157,7 @@ async function changeUserInventoryStatus(isAllowed: boolean) {
     const response = isAllowed ? await apiClient.post<ResultDto | null>(endpoint, dto) : await apiClient.delete<ResultDto | null>(endpoint, null, dto);
 
     if (!response.data) {
-      selectedIds.value.clear();
+      selectedUsers.value.clear();
       allSelected.value = false;
       await loadUsers(true);
     } else {
@@ -162,10 +170,10 @@ async function changeUserInventoryStatus(isAllowed: boolean) {
 
 async function setCurrentUser() {
   try {
-    const response = await apiClient.get<AppUserGetDto | null>('/api/UserOperations/get-my-info', null);
+    const response = await apiClient.get<ResultDtoGeneric<AppUserGetDto>>('/api/UserOperations/get-my-info', null);
 
-    if (response.data !== null) {
-      userStore.setUser(response.data);
+    if (response.data.isSucceeded) {
+      userStore.setUser(response.data.data!);
     } else {
       jwtStore.clearToken();
       userStore.clearUser();
@@ -259,10 +267,9 @@ async function setCurrentUser() {
             @click="win.open(`/user/${user.id}`, '_blank')"
             style="cursor: pointer">
           <td v-if="userStore.hasAdminRights" @click.stop>
-            <input
-                type="checkbox"
-                :checked="selectedIds.has(user.id)"
-                @change="() => toggleSelection(user.id)"/>
+            <input type="checkbox"
+                   :checked="Array.from(selectedUsers).some(u => u.id === user.id)"
+                   @change="() => toggleSelection(user)"/>
           </td>
           <td>{{ user.name }}</td>
           <td>{{ user.userName }}</td>

@@ -47,7 +47,7 @@ export class ApiClient {
     }
 
     private async handleRequest<T>(
-        method: 'get' | 'post' | 'put' | 'delete',
+        method: 'get' | 'post' | 'patch' | 'delete',
         url: string,
         dataOrParams?: any,
         config?: AxiosRequestConfig,
@@ -70,6 +70,11 @@ export class ApiClient {
     }
 
     public post<T = any>(url: string, data?: any, queryParams?: Record<string, any>, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+        const fullUrl = this.buildUrlWithQueryParams(url, queryParams);
+        return this.handleRequest<T>('post', fullUrl, data, config, true);
+    }
+
+    public patch<T = any>(url: string, data?: any, queryParams?: Record<string, any>, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
         const fullUrl = this.buildUrlWithQueryParams(url, queryParams);
         return this.handleRequest<T>('post', fullUrl, data, config, true);
     }

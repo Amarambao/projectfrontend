@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, onMounted, reactive} from 'vue';
+import {ref, onMounted, reactive, onBeforeUnmount} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {apiClient} from '@/apiClient/apiClient';
 import type {MessageGetDto} from "@/dto/chatMessage/MessageGetDto.ts";
@@ -8,10 +8,15 @@ import type {MessagePostDto} from "@/dto/chatMessage/MessagePostDto.ts";
 import type {ResultDto} from "@/dto/general/ResultDto.ts";
 import {useUserStore} from "@/stores/UserStore.ts";
 import type {IdAndListDto} from "@/dto/general/IdAndListDto.ts";
+import {HubConnectionBuilder} from "@microsoft/signalr";
+import {useJwtStore} from "@/stores/JwtStore.ts";
 
 const props = defineProps<{ inventoryId: string; isCreator: boolean }>();
 const {t, locale} = useI18n();
 
+const signalrUrl = `${import.meta.env.VITE_BACKEND_MAIN_URL}hubs/chat`;
+
+const jwtStore = useJwtStore();
 const userStore = useUserStore();
 const messages = ref<MessageGetDto[]>([]);
 const hasMore = ref(true);
@@ -28,6 +33,13 @@ const dto = reactive<MessageRequestDto>({
   writtenAt: null,
 });
 
+const connection = new HubConnectionBuilder()
+    .withUrl(signalrUrl, {
+      accessTokenFactory: () => jwtStore.getToken!
+    })
+    .withAutomaticReconnect()
+    .build();
+
 const deleteDto = reactive<IdAndListDto>({
   id: props.inventoryId,
   values: Array.from(selectedDates.value)
@@ -36,6 +48,19 @@ const deleteDto = reactive<IdAndListDto>({
 onMounted(async () => {
   await loadMessages();
   scrollToBottom();
+
+  await connection.start();
+  await connection.invoke('JoinInventory', props.inventoryId);
+
+  connection.on('chat.messageCreated', (msg: MessageGetDto) => {
+    messages.value.unshift(msg);
+    scrollToBottom();
+  });
+});
+
+onBeforeUnmount(async () => {
+  await connection.invoke('LeaveInventory', props.inventoryId);
+  await connection.stop();
 });
 
 async function loadMessages(reset = false) {

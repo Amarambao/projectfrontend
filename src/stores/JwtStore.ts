@@ -5,6 +5,9 @@ export const useJwtStore = defineStore("jwtStore", {
         token: null as string | null,
         tokenDateTime: null as Date | null
     }),
+    getters: {
+        getToken: (state) => state.token,
+    },
     actions: {
         setToken(newToken: string) {
             this.token = newToken;

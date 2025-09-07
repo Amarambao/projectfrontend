@@ -90,7 +90,7 @@ async function deleteSelectedInventories() {
       inventoryIds: Array.from(selectedIds.value)
     });
 
-    if (response.data?.isSucceeded) {
+    if (response.data.isSucceeded) {
       inventories.value = inventories.value.filter(inv => !selectedIds.value.has(inv.id));
       selectedIds.value.clear();
       allSelected.value = false;

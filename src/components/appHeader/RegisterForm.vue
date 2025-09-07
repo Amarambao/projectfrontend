@@ -45,10 +45,10 @@ async function register() {
 
 async function setCurrentUser() {
   try {
-    const response = await apiClient.get<AppUserGetDto | null>('/api/UserOperations/get-my-info', null);
+    const response = await apiClient.get<ResultDtoGeneric<AppUserGetDto>>('/api/UserOperations/get-my-info', null);
 
-    if (response.data !== null) {
-      userStore.setUser(response.data);
+    if (response.data.isSucceeded) {
+      userStore.setUser(response.data.data!);
     } else {
       jwtStore.clearToken();
     }

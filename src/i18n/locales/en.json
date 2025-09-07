@@ -113,7 +113,9 @@
       "chat": "Chat",
       "types": "Item Types",
       "items": "Stored Items",
-      "editors": "Write access"
+      "editors": "Write access",
+      "idEditor": "Custom ID",
+      "descriptionEditor": "Custom description"
     },
     "detailsTab": {
       "titleView": "Inventory Details",
@@ -167,6 +169,25 @@
     "editorsTab": {
       "writeAccess": "Users with Write Access",
       "allUsers": "All Users"
+    }
+  },
+  "addItemModal": {
+    "itemDescription": "Описание элемента",
+    "id": "Пользовательский ID",
+    "yes": "Да",
+    "submit": "Сохранить",
+    "customId": {
+      "generated": "Сгенерировано",
+      "enum": {
+        "FixedText": "Фиксированный текст",
+        "DateTime": "Дата/время",
+        "UIntSequence": "Последовательность",
+        "Random20Bit": "Случайное 20-битное число",
+        "Random32Bit": "Случайное 32-битное число",
+        "Random6Digit": "Случайное 6-значное число",
+        "Random9Digit": "Случайное 9-значное число",
+        "Guid": "GUID"
+      }
     }
   }
 }

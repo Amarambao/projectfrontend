@@ -5,4 +5,5 @@ export interface AppUserGetDto {
     email: string;
     isBlocked: boolean;
     isAdmin: boolean;
+    concurrencyStamp: string;
 }

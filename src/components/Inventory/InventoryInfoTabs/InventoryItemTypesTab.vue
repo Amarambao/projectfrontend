@@ -3,24 +3,26 @@ import {ref, computed, onMounted, defineProps, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {apiClient} from '@/apiClient/apiClient.ts';
 import type {ResultDto} from '@/dto/general/ResultDto.ts';
-import type {IdAndNameDto} from '@/dto/general/IdAndNameDto.ts';
+import type {IdAndStringDto} from '@/dto/general/IdAndStringDto.ts';
 import CustomIdEditor from '@/components/customId/CustomIdEditor.vue';
+import CustomDescriptionEditor from "@/components/Inventory/InventoryInfoTabs/CustomDescriptionEditor.vue";
 
 const props = defineProps<{ inventoryId: string }>();
 const {t} = useI18n();
 
-const originalData = ref<IdAndNameDto[]>([]);
-const itemList = ref<IdAndNameDto[]>([]);
+const originalData = ref<IdAndStringDto[]>([]);
+const itemList = ref<IdAndStringDto[]>([]);
 const itemInput = ref('');
 const itemSuggestions = ref<string[]>([]);
 const itemSearchTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const selectedItemId = ref<string | null>(null);
-const draggedItem = ref<IdAndNameDto | null>(null);
+const draggedItem = ref<IdAndStringDto | null>(null);
+const selectedTab = ref<'id' | 'description'>('id');
 
 const isChanged = computed(() => {
   if (itemList.value.length !== originalData.value.length) return true;
   for (let i = 0; i < itemList.value.length; i++) {
-    if (itemList.value[i].name !== originalData.value[i].name) return true;
+    if (itemList.value[i].value !== originalData.value[i].value) return true;
   }
   return false;
 });
@@ -31,7 +33,7 @@ onMounted(async () => {
 
 async function loadInventoryItems() {
   try {
-    const response = await apiClient.get<IdAndNameDto[]>('/api/ItemType/get-by-inventory-id', {
+    const response = await apiClient.get<IdAndStringDto[]>('/api/ItemType/get-by-inventory-id', {
       inventoryId: props.inventoryId,
     });
     originalData.value = response.data || [];
@@ -59,20 +61,20 @@ async function fetchItemSuggestions() {
       searchValue: query,
     });
     itemSuggestions.value = response.data || [];
-  } catch(err) {
+  } catch (err) {
     console.error(err)
   }
 }
 
 function addItem(name: string) {
   const trimmed = name.trim();
-  if (!trimmed || itemList.value.some(i => i.name === trimmed)) return;
-  itemList.value.push({id: crypto.randomUUID(), name: trimmed});
+  if (!trimmed || itemList.value.some(i => i.value === trimmed)) return;
+  itemList.value.push({id: crypto.randomUUID(), value: trimmed});
   itemInput.value = '';
   itemSuggestions.value = [];
 }
 
-function removeItem(item: IdAndNameDto) {
+function removeItem(item: IdAndStringDto) {
   itemList.value = itemList.value.filter(i => i.id !== item.id);
 }
 
@@ -90,7 +92,7 @@ async function saveChanges() {
   try {
     const dto = {
       id: props.inventoryId,
-      values: itemList.value.map(i => i.name),
+      values: itemList.value.map(i => i.value),
     };
     const response = await apiClient.post<ResultDto | null>('/api/InventoryItemType/modify', dto);
 
@@ -104,7 +106,7 @@ async function saveChanges() {
   }
 }
 
-function onDragStart(item: IdAndNameDto) {
+function onDragStart(item: IdAndStringDto) {
   draggedItem.value = item;
 }
 
@@ -136,12 +138,10 @@ function onDragEnd(e: DragEvent) {
             v-model="itemInput"
             class="form-control"
             :placeholder="t('inventoryInfo.itemTypesTab.searchPlaceholder')"/>
-        <ul
-            class="list-group position-absolute w-100 z-3"
+        <ul class="list-group position-absolute w-100 z-3"
             v-if="itemSuggestions.length"
             style="max-height: 25vh; overflow-y: auto;">
-          <li
-              v-for="suggestion in itemSuggestions"
+          <li v-for="suggestion in itemSuggestions"
               :key="suggestion"
               class="list-group-item list-group-item-action"
               @mousedown.prevent
@@ -153,15 +153,14 @@ function onDragEnd(e: DragEvent) {
 
       <div class="border rounded mb-3 item-drop-zone" style="max-height: 56vh; overflow-y: auto;">
         <ul class="list-group list-group-flush">
-          <li
-              v-for="item in itemList"
+          <li v-for="item in itemList"
               :key="item.id"
               class="list-group-item d-flex justify-content-between align-items-center"
               draggable="true"
               @dragstart="onDragStart(item)"
               @dragend="onDragEnd"
               @click="selectItem(item.id)">
-            <span>{{ item.name }}</span>
+            <span>{{ item.value }}</span>
           </li>
           <li v-if="itemList.length === 0" class="list-group-item text-muted">
             {{ t('inventoryInfo.itemTypesTab.noItems') }}
@@ -179,8 +178,29 @@ function onDragEnd(e: DragEvent) {
       </div>
     </div>
 
-    <div class="col-md-8">
-      <CustomIdEditor v-if="selectedItemId" :inventoryId="props.inventoryId" :itemId="selectedItemId"/>
+    <div class="col-md-8" v-if="selectedItemId">
+      <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+          <button class="nav-link" :class="{ active: selectedTab === 'id' }" @click="selectedTab = 'id'">
+            {{ t('inventoryInfo.tabs.idEditor') }}
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" :class="{ active: selectedTab === 'description' }"
+                  @click="selectedTab = 'description'">
+            {{ t('inventoryInfo.tabs.descriptionEditor') }}
+          </button>
+        </li>
+      </ul>
+
+      <div>
+        <CustomIdEditor v-if="selectedTab === 'id'"
+                        :inventoryId="props.inventoryId"
+                        :itemId="selectedItemId"/>
+        <CustomDescriptionEditor v-else
+                                 :inventoryId="props.inventoryId"
+                                 :itemId="selectedItemId"/>
+      </div>
     </div>
   </div>
 </template>

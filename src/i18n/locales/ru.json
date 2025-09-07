@@ -113,7 +113,9 @@
       "chat": "Чат",
       "types": "Типы предметов",
       "items": "Предметы",
-      "editors": "Редакторы"
+      "editors": "Редакторы",
+      "idEditor": "Настроить ID",
+      "descriptionEditor": "Настроить описание"
     },
     "detailsTab": {
       "titleView": "Подробнее",
@@ -167,6 +169,25 @@
     "editorsTab": {
       "writeAccess": "Пользователи с правом записи",
       "allUsers": "Все пользователи"
+    }
+  },
+  "addItemModal": {
+    "itemDescription": "Item Description",
+    "id": "Custom ID",
+    "yes": "Yes",
+    "submit": "Submit",
+    "customId": {
+      "generated": "Generated",
+      "enum": {
+        "FixedText": "Fixed Text",
+        "DateTime": "Date/Time",
+        "UIntSequence": "Sequence",
+        "Random20Bit": "Random 20-bit number",
+        "Random32Bit": "Random 32-bit number",
+        "Random6Digit": "Random 6-digit number",
+        "Random9Digit": "Random 9-digit number",
+        "Guid": "GUID"
+      }
     }
   }
 }

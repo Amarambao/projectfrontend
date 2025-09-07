@@ -31,9 +31,9 @@ onMounted(async () => {
 
 async function loadInventory() {
   try {
-    const response = await apiClient.get<ResultDtoGeneric<InventoryGetFullDto | null>>('/api/Inventory/get-full', {inventoryId: route.params.id});
+    const response = await apiClient.get<ResultDtoGeneric<InventoryGetFullDto>>('/api/Inventory/get-full', {inventoryId: route.params.id});
 
-    if (!response.data?.isSucceeded) {
+    if (!response.data.isSucceeded) {
       alert(response.data.error);
     } else {
       inventory.value = response.data.data!;
@@ -44,14 +44,12 @@ async function loadInventory() {
 }
 
 async function checkPermissions() {
-  try {
-    const [creatorRes, editorRes] = await Promise.all([
-      apiClient.get<boolean>('/api/Check/is-inv-creator-check', {inventoryId: route.params.id}),
-      apiClient.get<boolean>('/api/Check/is-editor-check', {inventoryId: route.params.id})
-    ]);
+  if (!jwtStore.isAnyToken() || !jwtStore.isTokenValid())
+    return;
 
-    isCreator.value = creatorRes.data;
-    isEditor.value = editorRes.data;
+  try {
+    isCreator.value = (await apiClient.get<boolean>('/api/Check/is-inv-creator-check', {inventoryId: route.params.id})).data;
+    isEditor.value = (await apiClient.get<boolean>('/api/Check/is-editor-check', {inventoryId: route.params.id})).data;
   } catch (err) {
     console.error(err);
   }
@@ -62,7 +60,8 @@ async function checkPermissions() {
   <div class="container py-4">
     <h4 class="mb-3">{{ inventory?.name }}</h4>
 
-    <ul class="nav nav-tabs mb-3">
+    <ul v-if="inventory && (inventory.isPublic || isCreator || isEditor || userStore.hasAdminRights)"
+        class="nav nav-tabs mb-3">
       <li class="nav-item">
         <button class="nav-link" :class="{ active: activeTab === 'details' }" @click="activeTab = 'details'">
           {{ t('inventoryInfo.tabs.details') }}
@@ -90,7 +89,7 @@ async function checkPermissions() {
       </li>
     </ul>
 
-    <div v-if="inventory && (inventory.isPublic || isCreator || isEditor || userStore.hasAdminRights) ">
+    <div v-if="inventory && (inventory.isPublic || isCreator || isEditor || userStore.hasAdminRights)">
       <InventoryDetailsTab v-if="activeTab === 'details'"
                            :inventory="inventory"
                            :isCreator="isCreator"

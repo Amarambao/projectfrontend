@@ -1,6 +1,7 @@
-import type {StoredItemDto} from "@/dto/item/StoredItemDto.ts";
+import type {StoredItemGetLiteDto} from "@/dto/item/StoredItemGetLiteDto.ts";
 
 export interface StoredItemGetAllDto {
+    itemId: string;
     itemName: string;
-    itemIds: StoredItemDto[];
+    storedItemsId: StoredItemGetLiteDto[];
 }

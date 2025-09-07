@@ -132,6 +132,12 @@ async function saveChanges() {
                  class="form-control"
                  placeholder="Fixed text value"/>
         </div>
+        <div v-if="element.elementType === 7" class="mt-2">
+          <input type="number"
+                 :disabled="true"
+                 class="form-control"
+                 placeholder="Increment current max value"/>
+        </div>
       </div>
     </div>
     <div v-if="isChanged" class="btn-group d-flex mt-3">

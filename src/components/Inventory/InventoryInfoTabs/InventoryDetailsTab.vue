@@ -30,6 +30,7 @@ const invUpdateDto = reactive<InventoryUpdateDto>({
   isPublic: props.inventory.isPublic,
   name: props.inventory.name,
   description: props.inventory.description ?? '',
+  concurrencyStamp: props.inventory.concurrencyStamp
 });
 
 const tagsUpdDto = reactive<IdAndListDto>({
@@ -45,14 +46,14 @@ watch(() => invUpdateDto, async () => {
 async function scheduleUpdate() {
   if (!isEditMode.value) return;
   if (saveTimer.value) clearTimeout(saveTimer.value);
-  saveTimer.value = setTimeout(async () => await updateInventory(), 1000);
+  saveTimer.value = setTimeout(async () => await updateInventory(), 5000);
 }
 
 async function updateInventory() {
   try {
     const response = await apiClient.post<ResultDto>('/api/Inventory/update', invUpdateDto);
 
-    if (response.data)
+    if (!response.data.isSucceeded)
       alert(response.data.error);
     else
       emit('reloadInventory');

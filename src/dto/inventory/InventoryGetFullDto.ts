@@ -6,4 +6,5 @@ export interface InventoryGetFullDto {
     creatorId: string;
     creatorName: string;
     tags: string[];
+    concurrencyStamp: string;
 }

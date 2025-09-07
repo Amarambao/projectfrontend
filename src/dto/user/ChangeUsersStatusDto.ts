@@ -1,5 +1,7 @@
+import type {IdAndStringDto} from "@/dto/general/IdAndStringDto.ts";
+
 export interface ChangeUsersStatusDto {
     requestedStatus: boolean;
-    userIds: string[];
+    userIdAndStamp: IdAndStringDto[];
     roleName?: string | null;
 }
