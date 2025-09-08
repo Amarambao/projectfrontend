@@ -3,40 +3,34 @@ import {ref, watch, onMounted, reactive, computed} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {apiClient} from '@/apiClient/apiClient';
 import type {PaginationRequest} from '@/dto/general/PaginationRequest';
-import type {StoredItemGetAllDto} from '@/dto/item/StoredItemGetAllDto.ts';
-import AddItemModal from "@/components/item/AddItemModal.vue";
-import {useUserStore} from "@/stores/UserStore.ts";
-import type {ResultDto} from "@/dto/general/ResultDto.ts";
-import type {IdAndListDto} from "@/dto/general/IdAndListDto.ts";
-import StoredItemDescription from "@/components/Inventory/InventoryInfoTabs/StoredItemDescription.vue";
+import type {StoredItemGetAllDto} from '@/dto/item/StoredItemGetAllDto';
+import type {ResultDto} from '@/dto/general/ResultDto';
+import type {IdAndStringDto} from '@/dto/general/IdAndStringDto';
+import AddItemModal from '@/components/item/AddItemModal.vue';
+import StoredItemDescription from '@/components/Inventory/InventoryInfoTabs/StoredItemDescription.vue';
+import {useUserStore} from '@/stores/UserStore';
 
 const props = defineProps<{ inventoryId: string; isCreator: boolean }>();
 
+const {t, locale} = useI18n();
 const win = window;
 const userStore = useUserStore();
-const {t, locale} = useI18n();
+
 const items = ref<StoredItemGetAllDto[]>([]);
+const itemTypes = ref<IdAndStringDto[]>([]);
 const selectedIds = ref<Set<string>>(new Set());
 const hasMore = ref(true);
+const isEmpty = ref(false);
 const timer = ref<ReturnType<typeof setTimeout> | null>(null);
 const showModal = ref(false);
 const selectedItemId = ref<string>('');
 const expandedItemId = ref<string | null>(null);
-
-const allItemIds = computed(() => items.value.flatMap(group => group.storedItemsId?.map(item => item.id) ?? []));
-
-const isAllSelected = computed(() => allItemIds.value.length > 0 && allItemIds.value.every(id => selectedIds.value.has(id)));
 
 const requestDto = reactive<PaginationRequest>({
   page: 0,
   returnCount: 25,
   inventoryId: props.inventoryId,
   searchValue: null,
-});
-
-const deleteDto = reactive<IdAndListDto>({
-  id: props.inventoryId,
-  values: Array.from(selectedIds.value),
 });
 
 watch(() => requestDto.searchValue, () => {
@@ -48,9 +42,15 @@ watch(() => requestDto.searchValue, () => {
   }, 500);
 });
 
-onMounted(async () => {
-  await loadItems();
-});
+onMounted(() => loadItems());
+
+const allItemIds = computed(() =>
+    items.value.flatMap(group => group.storedItemsId?.map(item => item.id) ?? [])
+);
+
+const isAllSelected = computed(() =>
+    allItemIds.value.length > 0 && allItemIds.value.every(id => selectedIds.value.has(id))
+);
 
 function toggleSelectAll() {
   if (isAllSelected.value) {
@@ -86,12 +86,13 @@ async function handleScroll(e: Event) {
 }
 
 async function loadItems(reset = false) {
-  if (!hasMore.value) return;
+  if (!hasMore.value && !reset) return;
 
   if (reset) {
     requestDto.page = 0;
-    items.value = [];
     hasMore.value = true;
+    items.value = [];
+    isEmpty.value = false;
   }
 
   try {
@@ -101,8 +102,26 @@ async function loadItems(reset = false) {
     const totalItemCount = data.reduce((sum, group) => sum + (group.storedItemsId?.length || 0), 0);
     if (totalItemCount < requestDto.returnCount) hasMore.value = false;
 
-    items.value.push(...data);
-    requestDto.page++;
+    if (data.length > 0) {
+      items.value = reset ? [...data] : [...items.value, ...data];
+      requestDto.page++;
+    }
+
+    if (data.length === 0 && requestDto.page === 0) {
+      isEmpty.value = true;
+      await loadInventoryItems();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function loadInventoryItems() {
+  try {
+    const response = await apiClient.get<IdAndStringDto[]>('/api/ItemType/get-by-inventory-id', {
+      inventoryId: props.inventoryId,
+    });
+    itemTypes.value = [...response.data];
   } catch (err) {
     console.error(err);
   }
@@ -114,13 +133,13 @@ async function deleteSelectedItems() {
   try {
     const response = await apiClient.delete<ResultDto | null>('/api/StoredItems/delete', null, {
       id: props.inventoryId,
-      values: Array.from(selectedIds.value)
+      values: Array.from(selectedIds.value),
     });
 
     if (response.data) {
-      alert(response.data.error)
+      alert(response.data.error);
     } else {
-      await loadItems(true)
+      await loadItems(true);
       selectedIds.value.clear();
     }
   } catch (err) {
@@ -128,8 +147,8 @@ async function deleteSelectedItems() {
   }
 }
 
-function openModal(group: StoredItemGetAllDto) {
-  selectedItemId.value = group.itemId;
+function openModal(itemTypeId: string) {
+  selectedItemId.value = itemTypeId;
   showModal.value = true;
 }
 
@@ -150,7 +169,7 @@ function formatDate(dateStr: string) {
 
 <template>
   <div class="d-flex btn-group align-items-center mb-2">
-    <button v-if="isCreator || userStore.hasAdminRights"
+    <button v-if="props.isCreator || userStore.hasAdminRights"
             class="btn btn-outline-danger btn-md"
             :disabled="selectedIds.size === 0"
             @click="deleteSelectedItems"
@@ -168,7 +187,7 @@ function formatDate(dateStr: string) {
         <thead class="sticky-top table-light">
         <tr>
           <th style="width: 2rem">
-            <input v-if="isCreator || userStore.hasAdminRights"
+            <input v-if="props.isCreator || userStore.hasAdminRights"
                    type="checkbox"
                    :checked="isAllSelected"
                    @change="toggleSelectAll"/>
@@ -177,60 +196,81 @@ function formatDate(dateStr: string) {
         </tr>
         </thead>
         <tbody>
-        <template v-for="group in items" :key="group.itemName">
-          <tr class="table-light">
-            <td>
-              <input v-if="isCreator || userStore.hasAdminRights"
-                     type="checkbox"
-                     :checked="isGroupSelected(group)"
-                     @change="toggleGroupSelection(group)"/>
-            </td>
+        <template v-if="!isEmpty">
+          <template v-for="group in items" :key="group.itemName">
+            <tr class="table-light">
+              <td>
+                <input v-if="props.isCreator || userStore.hasAdminRights"
+                       type="checkbox"
+                       :checked="isGroupSelected(group)"
+                       @change="toggleGroupSelection(group)"/>
+              </td>
+              <td class="d-flex justify-content-between align-items-center">
+                <strong>{{ group.itemName }}</strong>
+                <button class="btn btn-sm btn-outline-primary"
+                        @click="openModal(group.itemId)"
+                        :title="t('inventoryInfo.storedItemsTab.addItemTitle')">
+                  {{ t('inventoryInfo.storedItemsTab.addItemButton') }}
+                </button>
+              </td>
+            </tr>
+            <template v-for="item in group.storedItemsId" :key="item.id">
+              <tr class="table-secondary">
+                <td>
+                  <input v-if="props.isCreator || userStore.hasAdminRights"
+                         type="checkbox"
+                         :checked="selectedIds.has(item.id)"
+                         @change="toggleSelection(item.id)"/>
+                </td>
+                <td>
+                  <div class="d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <strong>{{ item.customId?.trim() || item.id }}</strong>
+                      <button class="btn btn-sm btn-outline-info" @click="toggleDetails(item.id)">
+                        {{ expandedItemId === item.id ? t('common.hide') : t('common.details') }}
+                      </button>
+                    </div>
+                    <div class="text-muted small">
+                      {{ formatDate(item.createdAt) }}
+                      <a class="text-decoration-none"
+                         @click="win.open(`/user/${item.creatorId}`, '_blank')"
+                         style="cursor: pointer">
+                        {{ item.creatorName }}
+                      </a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="expandedItemId === item.id">
+                <td></td>
+                <td>
+                  <StoredItemDescription :inventoryId="props.inventoryId" :storedItemId="item.id"/>
+                </td>
+              </tr>
+            </template>
+            <tr v-if="!group.storedItemsId?.length">
+              <td colspan="2" class="text-danger">
+                {{ t('inventoryInfo.storedItemsTab.table.noItems') }}
+              </td>
+            </tr>
+          </template>
+        </template>
+        <template v-else>
+          <tr v-for="type in itemTypes" :key="type.id">
+            <td></td>
             <td class="d-flex justify-content-between align-items-center">
-              <strong>{{ group.itemName }}</strong>
+              <strong>{{ type.value }}</strong>
               <button class="btn btn-sm btn-outline-primary"
-                      @click="openModal(group)"
+                      @click="openModal(type.id)"
                       :title="t('inventoryInfo.storedItemsTab.addItemTitle')">
                 {{ t('inventoryInfo.storedItemsTab.addItemButton') }}
               </button>
             </td>
           </tr>
-          <template v-for="item in group.storedItemsId" :key="item.id">
-            <tr class="table-secondary">
-              <td>
-                <input v-if="isCreator || userStore.hasAdminRights"
-                       type="checkbox"
-                       :checked="selectedIds.has(item.id)"
-                       @change="toggleSelection(item.id)"/>
-              </td>
-              <td>
-                <div class="d-flex flex-column">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <strong>{{ item.customId?.trim() || item.id }}</strong>
-                    <button class="btn btn-sm btn-outline-info" @click="toggleDetails(item.id)">
-                      {{ expandedItemId === item.id ? 'Hide' : 'Details' }}
-                    </button>
-                  </div>
-                  <div class="text-muted small">
-                    {{ formatDate(item.createdAt) }}
-                    <a class="text-decoration-none"
-                       @click="win.open(`/user/${item.creatorId}`, '_blank')"
-                       style="cursor: pointer">
-                      {{ item.creatorName }}
-                    </a>
-                  </div>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="expandedItemId === item.id">
-              <td></td>
-              <td colspan="1">
-                <StoredItemDescription :inventoryId="props.inventoryId" :storedItemId="item.id"/>
-              </td>
-            </tr>
-          </template>
-          <tr v-if="!group.storedItemsId?.length">
-            <td colspan="2" class="text-danger">
-              {{ t('inventoryInfo.storedItemsTab.table.noItems') }}
+          <tr v-if="itemTypes.length === 0">
+            <td></td>
+            <td class="text-muted">
+              {{ t('inventoryInfo.storedItemsTab.noItemTypes') }}
             </td>
           </tr>
         </template>
@@ -240,7 +280,7 @@ function formatDate(dateStr: string) {
   </div>
 
   <AddItemModal v-if="showModal"
-                :inventoryId="inventoryId"
+                :inventoryId="props.inventoryId"
                 :itemId="selectedItemId"
                 @close="showModal = false"
                 @loadItems="loadItems(true)"/>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, defineEmits, onMounted, ref, reactive } from 'vue';
+import { defineProps, defineEmits, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { AddItemDto } from "@/dto/item/AddItemDto.ts";
 import { apiClient } from "@/apiClient/apiClient.ts";
@@ -16,7 +16,7 @@ const descriptionSequence = ref<DescriptionElementDto[]>([]);
 const customIdSequence = ref<CustomIdElementDto[]>([]);
 const isCustomIdDisabled = ref(true);
 
-const addItemDto = reactive<AddItemDto>({
+const addItemDto = ref<AddItemDto>({
   inventoryId: props.inventoryId,
   itemId: props.itemId,
   customId: null,
@@ -35,6 +35,15 @@ async function loadDescriptionSequence() {
       itemId: props.itemId
     });
     descriptionSequence.value = response.data || [];
+
+    addItemDto.value.itemDescription = descriptionSequence.value.map(desk => ({
+      descriptionType: desk.descriptionType,
+      shortTextValue: null,
+      longTextValue: null,
+      numberValue: null,
+      hlinkValue: null,
+      boolValue: null
+    }));
   } catch (err) {
     console.error(err);
   }
@@ -122,90 +131,101 @@ function secureRandomInt(min: number, max: number): number {
 </script>
 
 <template>
-  <div>
-    <ul class="nav nav-tabs mb-3" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="active" data-bs-toggle="tab" data-bs-target="#descriptionTab" type="button" role="tab">
-          {{ t('addItemModal.itemDescription') }}
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link"
-                :class="{ disabled: isCustomIdDisabled }"
-                :style="isCustomIdDisabled ? 'pointer-events: none; opacity: 0.6;' : ''"
-                data-bs-toggle="tab"
-                data-bs-target="#customIdTab" type="button" role="tab">
-          {{ t('addItemModal.id') }}
-        </button>
-      </li>
-    </ul>
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0, 0, 0, 0.5);" @keydown.esc="emit('close')">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Title</h5>
+          <button type="button" class="btn-close" @click="emit('close')" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#descriptionTab" type="button" role="tab">
+                {{ t('addItemModal.itemDescription') }}
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link"
+                      :class="{ disabled: isCustomIdDisabled }"
+                      :style="isCustomIdDisabled ? 'pointer-events: none; opacity: 0.6;' : ''"
+                      data-bs-toggle="tab"
+                      data-bs-target="#customIdTab" type="button" role="tab">
+                {{ t('addItemModal.id') }}
+              </button>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="descriptionTab" role="tabpanel">
+              <form @submit.prevent="addItem">
+                <div v-for="(desc, index) in descriptionSequence" :key="index" class="mb-3">
+                  <label class="form-label">{{ desc.name }}</label>
 
-    <div class="tab-content">
-      <div class="tab-pane fade show active" id="descriptionTab" role="tabpanel">
-        <form @submit.prevent="addItem">
-          <div v-for="(desc, index) in descriptionSequence" :key="index" class="mb-3">
-            <label class="form-label">{{ desc.name }}</label>
+                  <input v-if="desc.descriptionType === CustomDescriptionFieldEnum.SingleLineText"
+                         type="text"
+                         class="form-control"
+                         v-model="addItemDto.itemDescription[index].shortTextValue"/>
 
-            <input v-if="desc.descriptionType === CustomDescriptionFieldEnum.SingleLineText"
-                   type="text"
-                   class="form-control"
-                   v-model="addItemDto.itemDescription[index].shortTextValue"/>
+                  <textarea v-else-if="desc.descriptionType === CustomDescriptionFieldEnum.MultiLineText"
+                            class="form-control"
+                            v-model="addItemDto.itemDescription[index].longTextValue"></textarea>
 
-            <textarea v-else-if="desc.descriptionType === CustomDescriptionFieldEnum.MultiLineText"
-                      class="form-control"
-                      v-model="addItemDto.itemDescription[index].longTextValue"></textarea>
+                  <input v-else-if="desc.descriptionType === CustomDescriptionFieldEnum.Numeric"
+                         type="number"
+                         class="form-control"
+                         v-model.number="addItemDto.itemDescription[index].numberValue"/>
 
-            <input v-else-if="desc.descriptionType === CustomDescriptionFieldEnum.Numeric"
-                   type="number"
-                   class="form-control"
-                   v-model.number="addItemDto.itemDescription[index].numberValue"/>
+                  <input v-else-if="desc.descriptionType === CustomDescriptionFieldEnum.DocumentLink"
+                         type="text"
+                         class="form-control"
+                         v-model="addItemDto.itemDescription[index].hlinkValue"/>
 
-            <input v-else-if="desc.descriptionType === CustomDescriptionFieldEnum.DocumentLink"
-                   type="text"
-                   class="form-control"
-                   v-model="addItemDto.itemDescription[index].hlinkValue"/>
+                  <div v-else-if="desc.descriptionType === CustomDescriptionFieldEnum.BooleanValue" class="form-check">
+                    <input type="checkbox"
+                           class="form-check-input"
+                           v-model="addItemDto.itemDescription[index].boolValue"/>
+                    <label class="form-check-label">{{ t('addItemModal.yes') }}</label>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div class="tab-pane fade" id="customIdTab" role="tabpanel">
+              <div v-if="!isCustomIdDisabled">
+                <div v-for="(element, idx) in customIdSequence" :key="idx" class="mb-3">
+                  <label class="form-label">{{ getCustomIdLabel(element.elementType) }}</label>
 
-            <div v-else-if="desc.descriptionType === CustomDescriptionFieldEnum.BooleanValue" class="form-check">
-              <input type="checkbox"
-                     class="form-check-input"
-                     v-model="addItemDto.itemDescription[index].boolValue"/>
-              <label class="form-check-label">{{ t('addItemModal.yes') }}</label>
+                  <input v-if="element.elementType === CustomIdElementEnum.FixedText"
+                         type="text"
+                         class="form-control"
+                         :value="element.fixedTextValue ?? ''"
+                         disabled/>
+
+                  <input v-else-if="element.elementType === CustomIdElementEnum.DateTime"
+                         type="text"
+                         class="form-control"
+                         :value="new Date().toISOString()"
+                         disabled/>
+
+                  <input v-else-if="element.elementType === CustomIdElementEnum.UIntSequence"
+                         type="number"
+                         class="form-control"
+                         :value="element.incrementValue ?? 0"
+                         disabled/>
+
+                  <input v-else
+                         type="text"
+                         class="form-control"
+                         :value="getRandomPlaceholder(element.elementType)"
+                         disabled/>
+                </div>
+              </div>
             </div>
           </div>
-
-          <button type="submit" class="btn btn-primary">{{ t('addItemModal.submit') }}</button>
-        </form>
-      </div>
-      <div class="tab-pane fade" id="customIdTab" role="tabpanel">
-        <div v-if="!isCustomIdDisabled">
-          <div v-for="(element, idx) in customIdSequence" :key="idx" class="mb-3">
-            <label class="form-label">{{ getCustomIdLabel(element.elementType) }}</label>
-
-            <input v-if="element.elementType === CustomIdElementEnum.FixedText"
-                   type="text"
-                   class="form-control"
-                   :value="element.fixedTextValue ?? ''"
-                   disabled/>
-
-            <input v-else-if="element.elementType === CustomIdElementEnum.DateTime"
-                   type="text"
-                   class="form-control"
-                   :value="new Date().toISOString()"
-                   disabled/>
-
-            <input v-else-if="element.elementType === CustomIdElementEnum.UIntSequence"
-                   type="number"
-                   class="form-control"
-                   :value="element.incrementValue ?? 0"
-                   disabled/>
-
-            <input v-else
-                   type="text"
-                   class="form-control"
-                   :value="getRandomPlaceholder(element.elementType)"
-                   disabled/>
-          </div>
         </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">{{ t('addItemModal.submit') }}</button>
+        </div>
+
       </div>
     </div>
   </div>

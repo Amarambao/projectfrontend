@@ -172,20 +172,20 @@
     }
   },
   "addItemModal": {
-    "itemDescription": "Item Description",
-    "id": "Custom ID",
-    "yes": "Yes",
-    "submit": "Submit",
+    "itemDescription": "Описание элемента",
+    "id": "Пользовательский ID",
+    "yes": "Да",
+    "submit": "Сохранить",
     "customId": {
-      "generated": "Generated",
+      "generated": "Сгенерировано",
       "enum": {
-        "FixedText": "Fixed Text",
-        "DateTime": "Date/Time",
-        "UIntSequence": "Sequence",
-        "Random20Bit": "Random 20-bit number",
-        "Random32Bit": "Random 32-bit number",
-        "Random6Digit": "Random 6-digit number",
-        "Random9Digit": "Random 9-digit number",
+        "FixedText": "Фиксированный текст",
+        "DateTime": "Дата/время",
+        "UIntSequence": "Последовательность",
+        "Random20Bit": "Случайное 20-битное число",
+        "Random32Bit": "Случайное 32-битное число",
+        "Random6Digit": "Случайное 6-значное число",
+        "Random9Digit": "Случайное 9-значное число",
         "Guid": "GUID"
       }
     }

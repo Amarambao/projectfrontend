@@ -45,8 +45,8 @@ async function loadInventories(reset = false) {
 
   if (reset) {
     dto.page = 0;
-    inventories.value = [];
     hasMore.value = true;
+    inventories.value = [];
   }
 
   try {
@@ -54,8 +54,10 @@ async function loadInventories(reset = false) {
 
     if (response.data.length < dto.returnCount) hasMore.value = false;
 
-    inventories.value = [...response.data];
-    dto.page++;
+    if (response.data.length > 0) {
+      inventories.value = reset ? [...response.data] : [...inventories.value, ...response.data];
+      dto.page++;
+    }
   } catch (err) {
     console.log(err);
   }
@@ -78,7 +80,7 @@ function toggleSelection(id: string) {
 async function onScroll(e: Event) {
   const el = e.target as HTMLElement;
   if (el.scrollTop + el.clientHeight >= el.scrollHeight) {
-    await loadInventories(false);
+    await loadInventories();
   }
 }
 

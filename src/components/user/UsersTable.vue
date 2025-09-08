@@ -50,8 +50,8 @@ async function loadUsers(reset = false) {
 
   if (reset) {
     dto.page = 0;
-    users.value = [];
     hasMore.value = true;
+    users.value = [];
   }
 
   try {
@@ -59,8 +59,10 @@ async function loadUsers(reset = false) {
 
     if (response.data.length < dto.returnCount) hasMore.value = false;
 
-    users.value = [...response.data];
-    dto.page++;
+    if (response.data.length > 0) {
+      users.value = reset ? [...response.data] : [...users.value, ...response.data];
+      dto.page++;
+    }
   } catch (err) {
     console.error(err);
   }
@@ -148,7 +150,7 @@ async function changeUserInventoryStatus(isAllowed: boolean) {
 
   const dto = {
     id: props.inventoryId,
-    values: Array.from(selectedUsers.value),
+    values: Array.from(selectedUsers.value).map(user => user.id),
   };
 
   const endpoint = isAllowed ? '/api/InventoryEditors/add' : '/api/InventoryEditors/delete';
